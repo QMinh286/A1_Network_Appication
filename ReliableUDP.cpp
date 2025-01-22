@@ -119,7 +119,6 @@ private:
 int main(int argc, char* argv[])
 {
 	// parse command line
-
 	enum Mode
 	{
 		Client,
@@ -128,20 +127,24 @@ int main(int argc, char* argv[])
 
 	Mode mode = Server;
 	Address address;
-
+	
+	/*
+	Checks if we are running as a client. Also parses the third command line argument
+	to grab the path to the file that we are sending. 
+	*/ 
 	if (argc >= 2)
 	{
 		int a, b, c, d;
 #pragma warning(suppress : 4996)
 		if (sscanf(argv[1], "%d.%d.%d.%d", &a, &b, &c, &d))
 		{
+			// somewhere in here we will load the file from the local disk based on the file name
 			mode = Client;
 			address = Address(a, b, c, d, ServerPort);
 		}
 	}
 
 	// initialize
-
 	if (!InitializeSockets())
 	{
 		printf("failed to initialize sockets\n");
@@ -160,6 +163,7 @@ int main(int argc, char* argv[])
 
 	if (mode == Client)
 		connection.Connect(address);
+	
 	else
 		connection.Listen();
 
@@ -203,6 +207,7 @@ int main(int argc, char* argv[])
 
 		sendAccumulator += DeltaTime;
 
+		// this is where the file is sent from the client
 		while (sendAccumulator > 1.0f / sendRate)
 		{
 			unsigned char packet[PacketSize];
@@ -211,8 +216,11 @@ int main(int argc, char* argv[])
 			sendAccumulator -= 1.0f / sendRate;
 		}
 
+		// this is where the file is recieved by the server
 		while (true)
 		{
+			// the system needs some way to know that it has recieved the whole file
+			// then validate the file integrity, and then tell
 			unsigned char packet[256];
 			int bytes_read = connection.ReceivePacket(packet, sizeof(packet));
 			if (bytes_read == 0)
