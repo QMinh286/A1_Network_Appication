@@ -14,7 +14,7 @@
 #define PLATFORM_WINDOWS  1
 #define PLATFORM_MAC      2
 #define PLATFORM_UNIX     3
-#define PacketSizeHack    256 + 128
+const int PacketSizeHack = 256 + 128;
 
 #if defined(_WIN32)
 #define PLATFORM PLATFORM_WINDOWS
@@ -610,7 +610,7 @@ namespace net
 		}
 	};
 
-	// reliability system to support reliable connection
+	// reliability system to support reliable connection		
 	//  + manages sent, received, pending ack and acked packet queues
 	//  + separated out from reliable connection because it is quite complex and i want to unit test it!
 
@@ -960,35 +960,41 @@ namespace net
 
 		// overriden functions from "Connection"
 
-		bool SendPacket(const unsigned char data[], int size)
+		virtual bool SendPacket(const unsigned char data[], int PacketSizeHack) override
 		{
 #ifdef NET_UNIT_TEST
 			if (reliabilitySystem.GetLocalSequence() & packet_loss_mask)
 			{
-				reliabilitySystem.PacketSent(size);
+				reliabilitySystem.PacketSent(PacketSizeHack);
 				return true;
 			}
 #endif
 			const int header = 12;
-			unsigned char packet[header + PacketSizeHack];
+			static int packetCounter = 0;
+			char message[256];
+			snprintf(message, sizeof(message), "Hello World <<%d>>", packetCounter++);
+			size_t messageSize = strlen(message);
+			//unsigned char packet[header + PacketSizeHack];
+			std::vector<unsigned char> packet(header + messageSize);
 			unsigned int seq = reliabilitySystem.GetLocalSequence();
 			unsigned int ack = reliabilitySystem.GetRemoteSequence();
 			unsigned int ack_bits = reliabilitySystem.GenerateAckBits();
-			WriteHeader(packet, seq, ack, ack_bits);
-			std::memcpy(packet + header, data, size);
-			if (!Connection::SendPacket(packet, size + header))
+			WriteHeader(&packet[0], seq, ack, ack_bits);
+			std::memcpy(&packet[header], message, messageSize);
+			if (!Connection::SendPacket(&packet[0], header + messageSize))
 				return false;
-			reliabilitySystem.PacketSent(size);
+			reliabilitySystem.PacketSent(messageSize);
 			return true;
 		}
 
-		int ReceivePacket(unsigned char data[], int size)
+		virtual int ReceivePacket(unsigned char data[], int PacketSizeHack) override
 		{
 			const int header = 12;
-			if (size <= header)
+			if (PacketSizeHack <= header)
 				return false;
-			unsigned char packet[header + PacketSizeHack];
-			int received_bytes = Connection::ReceivePacket(packet, size + header);
+			//unsigned char packet[header + PacketSizeHack];
+			std::vector<unsigned char> packet(header + PacketSizeHack);
+			int received_bytes = Connection::ReceivePacket(&packet[0], PacketSizeHack + header);
 			if (received_bytes == 0)
 				return false;
 			if (received_bytes <= header)
@@ -996,10 +1002,15 @@ namespace net
 			unsigned int packet_sequence = 0;
 			unsigned int packet_ack = 0;
 			unsigned int packet_ack_bits = 0;
-			ReadHeader(packet, packet_sequence, packet_ack, packet_ack_bits);
+			ReadHeader(&packet[0], packet_sequence, packet_ack, packet_ack_bits); // Extract header information
+			// Notify reliability system about the received packet
 			reliabilitySystem.PacketReceived(packet_sequence, received_bytes - header);
 			reliabilitySystem.ProcessAck(packet_ack, packet_ack_bits);
-			std::memcpy(data, packet + header, received_bytes - header);
+			// Extract the message from the packet
+			std::memcpy(data, &packet[0] + header, received_bytes - header);
+			data[received_bytes - header] = '\0';  // Null-terminate the string...added for testing Hello World
+			// Print the received message
+			printf("Received Packet: %s\n", data);
 			return received_bytes - header;
 		}
 
