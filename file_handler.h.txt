@@ -1,6 +1,6 @@
-// load the file
+// load the file from the local disk
 
-// store the file
+// store the file to the local disk
 
 // send the file
 
