@@ -192,10 +192,8 @@ int main(int argc, char* argv[])
 			MD5 md5;
 			md5.update(fileBuffer.data(), fileSize);  
 			string fileHash = md5.finalize().hexdigest();
-			cout << fileHash << endl;
 			// sends the MD5 hash to the server
 			connection.SendPacket(reinterpret_cast<const unsigned char*>(fileHash.c_str()), fileHash.length());
-			
 		}	
 	}
 		
@@ -214,14 +212,12 @@ int main(int argc, char* argv[])
 	while (true)
 	{
 		// update flow control
-
 		if (connection.IsConnected())
 			flowControl.Update(DeltaTime, connection.GetReliabilitySystem().GetRoundTripTime() * 1000.0f);
 
 		const float sendRate = flowControl.GetSendRate();
 
 		// detect changes in connection state
-
 		if (mode == Server && connected && !connection.IsConnected())
 		{
 			flowControl.Reset();
@@ -242,30 +238,32 @@ int main(int argc, char* argv[])
 		}
 
 		// send and receive packets
-
 		sendAccumulator += DeltaTime;
 
-		// this is where the file is sent from the client
+		// this is where the file is broken up into chunks and sent to the server.
 		while (sendAccumulator > 1.0f / sendRate)
 		{
-			unsigned char packet[PacketSize];
-			memset(packet, 0, sizeof(packet));
-			connection.SendPacket(packet, sizeof(packet));
-			sendAccumulator -= 1.0f / sendRate;
+			unsigned char packet[PacketSize];	    // Creates an empty packet of size `PacketSize`
+			// memset(packet, 0, sizeof(packet));	// Fills the packet with zeros
+			// connection.SendPacket(packet, sizeof(packet)); // Sends the empty packet over UDP
+			// sendAccumulator -= 1.0f / sendRate;	// Adjusts the accumulator for sending rate control
+			file.read(reinterpret_cast<char*>(packet), PacketSize);
+			connection.SendPacket(packet, file.gcount());
 		}
 
+
+
+
+		// this is where the file is recieved by the server
 		// this is where the file is recieved by the server
 		while (true)
 		{
-			// the system needs some way to know that it has recieved the whole file
-			// then validate the file integrity, and then tell client we succeeded
 			unsigned char packet[256];
 			int bytes_read = connection.ReceivePacket(packet, sizeof(packet));
 			if (bytes_read == 0)
-				break;
-		}
-
-		// show packets that were acked this frame
+				break;  // exits if no data is received
+			bool receivedFileSize = false;
+		}		
 
 #ifdef SHOW_ACKS
 		unsigned int* acks = NULL;
