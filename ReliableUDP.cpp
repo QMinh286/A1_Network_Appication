@@ -184,17 +184,18 @@ int main(int argc, char* argv[])
 			std::streamsize fileSize = file.tellg();// this grabs the size of the file
 			file.seekg(0, std::ios::beg);			// moves file pointer back to start of file. (so we can send it).
 			// sends the file size to the server
-
-			// does an MD5 hash on the file
-			vector<char> fileBuffer(fileSize);       // Allocate buffer for file hash
-			file.read(fileBuffer.data(), fileSize);  // Read entire fileS
+			connection.SendPacket(reinterpret_cast<unsigned char*>(&fileSize), sizeof(fileSize));
+			
+			// reads the file into a buffer and creates the MD5 hash
+			vector<char> fileBuffer(fileSize);       
+			file.read(fileBuffer.data(), fileSize);  
 			MD5 md5;
-			md5.update(fileBuffer.data(), fileSize);  // Hash the whole file
-			string fileHash = md5.hexdigest();
+			md5.update(fileBuffer.data(), fileSize);  
+			string fileHash = md5.finalize().hexdigest();
 			cout << fileHash << endl;
 			// sends the MD5 hash to the server
-
-			// starts sending packets to the server
+			connection.SendPacket(reinterpret_cast<const unsigned char*>(fileHash.c_str()), fileHash.length());
+			
 		}	
 	}
 		
