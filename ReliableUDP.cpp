@@ -127,10 +127,11 @@ int main(int argc, char* argv[])
 
 	Mode mode = Server;
 	Address address;
+	string fileName;
 	
 	/*
-	Checks if we are running as a client. Also parses the third command line argument
-	to grab the path to the file that we are sending. 
+	Checks if we are running as a client or server.
+	When running as the client the system grabs file path we are sending and IP address of the server.
 	*/ 
 	if (argc >= 2)
 	{
@@ -138,9 +139,9 @@ int main(int argc, char* argv[])
 #pragma warning(suppress : 4996)
 		if (sscanf(argv[1], "%d.%d.%d.%d", &a, &b, &c, &d))
 		{
-			// somewhere in here we will load the file from the local disk based on the file name
-			mode = Client;
-			address = Address(a, b, c, d, ServerPort);
+			mode = Client; 
+			address = Address(a, b, c, d, ServerPort); // grabs the server IP address
+			fileName = argv[2]; // grabs file path to the file we are sending. 
 		}
 	}
 
@@ -161,11 +162,20 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	std::ifstream file;
 	if (mode == Client)
+	{
+		// opens the file
+
 		connection.Connect(address);
-	
+		
+	}
+		
 	else
+	{
 		connection.Listen();
+	}
+		
 
 	bool connected = false;
 	float sendAccumulator = 0.0f;
@@ -220,7 +230,7 @@ int main(int argc, char* argv[])
 		while (true)
 		{
 			// the system needs some way to know that it has recieved the whole file
-			// then validate the file integrity, and then tell
+			// then validate the file integrity, and then tell client we succeeded
 			unsigned char packet[256];
 			int bytes_read = connection.ReceivePacket(packet, sizeof(packet));
 			if (bytes_read == 0)
