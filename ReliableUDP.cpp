@@ -165,9 +165,20 @@ int main(int argc, char* argv[])
 	std::ifstream file;
 	if (mode == Client)
 	{
-		// opens the file
+		// opens the file, checks if it can even open
+		file.open(fileName, std::ios::binary);
+		if (!file)
+		{
+			// error opening the file
+			printf("Error: could not open \"%s\" Please try again.\n", fileName.c_str());
+			return 0;
+		}
+		else
+		{
+			// file was opened successfully so connect to the server
+			connection.Connect(address);
+		}
 
-		connection.Connect(address);
 		
 	}
 		
