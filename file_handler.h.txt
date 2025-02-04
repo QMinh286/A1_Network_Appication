@@ -1,9 +1,0 @@
-// load the file from the local disk
-
-// store the file to the local disk
-
-// send the file
-
-// receive the file
-
-// verify the Files contents
