@@ -8,7 +8,7 @@ C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\R
 C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\Net.h(911,30): warning C4244: '/=': conversion from 'float' to 'int', possible loss of data
   (compiling source file 'ReliableUDP.cpp')
   
-C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(193,34): warning C4244: 'argument': conversion from 'std::streamsize' to 'MD5::size_type', possible loss of data
-C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(196,99): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(255,18): warning C4244: 'initializing': conversion from 'std::streamsize' to 'int', possible loss of data
+C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(193,43): warning C4244: 'argument': conversion from 'std::streamsize' to 'MD5::size_type', possible loss of data
+C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(196,108): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\ReliableUDP.cpp(199,108): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   ReliableUDP.vcxproj -> C:\Documents\Education\Conestoga\Level-4-again\Network Application Development\ReliableUDP\x64\Debug\ReliableUDP.exe
