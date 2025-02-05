@@ -960,7 +960,7 @@ namespace net
 
 		// overriden functions from "Connection"
 
-		virtual bool SendPacket(const unsigned char data[], int PacketSizeHack) override
+		virtual bool SendPacket(const unsigned char data[], int dataSize) override
 		{
 #ifdef NET_UNIT_TEST
 			if (reliabilitySystem.GetLocalSequence() & packet_loss_mask)
@@ -969,21 +969,17 @@ namespace net
 				return true;
 			}
 #endif
-			const int header = 12;
-			static int packetCounter = 0;
-			char message[256];
-			snprintf(message, sizeof(message), "Hello World <<%d>>", packetCounter++);
-			size_t messageSize = strlen(message);
+			const int header = 12;;
 			//unsigned char packet[header + PacketSizeHack];
-			std::vector<unsigned char> packet(header + messageSize);
+			std::vector<unsigned char> packet(header + dataSize);
 			unsigned int seq = reliabilitySystem.GetLocalSequence();
 			unsigned int ack = reliabilitySystem.GetRemoteSequence();
 			unsigned int ack_bits = reliabilitySystem.GenerateAckBits();
 			WriteHeader(&packet[0], seq, ack, ack_bits);
-			std::memcpy(&packet[header], message, messageSize);
-			if (!Connection::SendPacket(&packet[0], header + messageSize))
+			std::memcpy(&packet[header], data, dataSize);
+			if (!Connection::SendPacket(&packet[0], header + dataSize))
 				return false;
-			reliabilitySystem.PacketSent(messageSize);
+			reliabilitySystem.PacketSent(dataSize);
 			return true;
 		}
 
@@ -1008,9 +1004,6 @@ namespace net
 			reliabilitySystem.ProcessAck(packet_ack, packet_ack_bits);
 			// Extract the message from the packet
 			std::memcpy(data, &packet[0] + header, received_bytes - header);
-			data[received_bytes - header] = '\0';  // Null-terminate the string...added for testing Hello World
-			// Print the received message
-			printf("Received Packet: %s\n", data);
 			return received_bytes - header;
 		}
 

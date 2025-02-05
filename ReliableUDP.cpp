@@ -243,27 +243,57 @@ int main(int argc, char* argv[])
 		// this is where the file is broken up into chunks and sent to the server.
 		while (sendAccumulator > 1.0f / sendRate)
 		{
-			unsigned char packet[PacketSize];	    // Creates an empty packet of size `PacketSize`
+			//unsigned char packet[PacketSize];	    // Creates an empty packet of size `PacketSize`
 			// memset(packet, 0, sizeof(packet));	// Fills the packet with zeros
 			// connection.SendPacket(packet, sizeof(packet)); // Sends the empty packet over UDP
 			// sendAccumulator -= 1.0f / sendRate;	// Adjusts the accumulator for sending rate control
+			//file.read(reinterpret_cast<char*>(packet), PacketSize);
+			//connection.SendPacket(packet, file.gcount());
+
+			unsigned char packet[PacketSize];
 			file.read(reinterpret_cast<char*>(packet), PacketSize);
-			connection.SendPacket(packet, file.gcount());
+			int bytesRead = file.gcount();
+			if (bytesRead > 0)
+			{
+				connection.SendPacket(packet, bytesRead);
+				sendAccumulator -= 1.0f / sendRate;
+			}
+			else
+			{
+				break; // no more data to send
+			}
 		}
 
 
 
 
-		// this is where the file is recieved by the server
-		// this is where the file is recieved by the server
+		// this is where the file metadata is recieved by the server
+		bool fileSizeReceived = false;
+		bool hashReceived = false;
 		while (true)
 		{
-			unsigned char packet[256];
+			// receive packets
+			unsigned char packet[PacketSize];
 			int bytes_read = connection.ReceivePacket(packet, sizeof(packet));
 			if (bytes_read == 0)
-				break;  // exits if no data is received
-			bool receivedFileSize = false;
-		}		
+				break;  // no packet available
+
+			if (!fileSizeReceived)
+			{
+				// first packet: file size (sent as binary)
+				std::streamsize fileSize = *reinterpret_cast<std::streamsize*>(packet);
+				printf("Received file size: %lld bytes\n", (long long)fileSize);
+				fileSizeReceived = true;
+			}
+			else if (!hashReceived)
+			{
+				// second packet: MD5 hash string
+				std::string hash(reinterpret_cast<char*>(packet), bytes_read);
+				printf("Received MD5 hash: %s\n", hash.c_str());
+				hashReceived = true;
+			}
+		}
+
 
 #ifdef SHOW_ACKS
 		unsigned int* acks = NULL;
